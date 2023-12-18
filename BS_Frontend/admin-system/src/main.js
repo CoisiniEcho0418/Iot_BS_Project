@@ -17,6 +17,8 @@ import axios from "axios";
 import moment from "moment";
 // 引入vue-baidu-map，（百度地图SDK）
 import BaiduMap from "vue-baidu-map";
+// 引入store（vuex）
+import store from "./store";
 
 // 使用百度地图SDK
 Vue.use(BaiduMap, { ak: "9oFarDYWLF2rtgQ1zp0BCIxcjihqsqda" });
@@ -34,19 +36,24 @@ Vue.prototype.$echarts = echarts;
 Vue.prototype.$moment = moment;
 
 // 设置接口请求的前缀地址
-axios.defaults.baseURL = "/admin-system";
+axios.defaults.baseURL = "http://localhost:8080/";
 // 全局设置token
-axios.interceptors.request.use(function(config) {
-  let token = sessionStorage.getItem("token");
-  if (token) {
-    config.headers["token"] = token;
+axios.interceptors.request.use(
+  function(config) {
+    if (localStorage.getItem("Authorization")) {
+      config.headers.Authorization = localStorage.getItem("Authorization");
+    }
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 /* eslint-disable no-new */
 new Vue({
   el: "#app",
   router,
+  store, // 注入 Vuex store 到 Vue 实例中
   components: { App },
   template: "<App/>"
 });

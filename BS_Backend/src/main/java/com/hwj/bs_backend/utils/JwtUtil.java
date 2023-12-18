@@ -6,18 +6,25 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.HashMap;
 
+@Component  // 添加此注解以使其成为Spring管理的组件
 public class JwtUtil {
 
     //过期时间15分钟
     private static final long EXPIRE_TIME = 15 * 60 * 1000;
 
     // 从配置文件中读取密钥
-    @Value("${jwt.secretKey}")
     private static String TOKEN_SECRET;
+
+    // 使用注入的值覆盖静态字段
+    @Value("${jwt.secretKey}")
+    public void setTokenSecret(String tokenSecret) {
+        JwtUtil.TOKEN_SECRET = tokenSecret;
+    }
 
     //生成签名,15分钟后过期
     public static String sign(int userId) {

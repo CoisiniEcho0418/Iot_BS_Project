@@ -32,7 +32,23 @@ public interface UserMapper {
     int updatePassword(@Param("username") String username, @Param("oldPassword") String oldPassword, @Param("newPassword") String newPassword);
 
     // 更新用户信息（包括用户名、邮箱和手机号）
-    @Update("UPDATE user SET username = #{newUsername}, email = #{newEmail}, phone = #{newPhone} WHERE id = #{userId}")
+    @Update({
+            "<script>",
+            "UPDATE user",
+            "<set>",
+            "<if test='newUsername != null'>",
+            "username = #{newUsername},",
+            "</if>",
+            "<if test='newEmail != null'>",
+            "email = #{newEmail},",
+            "</if>",
+            "<if test='newPhone != null'>",
+            "phone = #{newPhone}",
+            "</if>",
+            "</set>",
+            "WHERE id = #{userId}",
+            "</script>"
+    })
     int updateUserInfo(@Param("userId") Integer userId, @Param("newUsername") String newUsername, @Param("newEmail") String newEmail, @Param("newPhone") String newPhone);
 
     // 根据userId来查找用户

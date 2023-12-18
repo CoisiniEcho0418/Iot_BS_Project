@@ -52,12 +52,14 @@ public interface DeviceMapper {
      */
     @Update({
             "<script>",
-            "UPDATE device SET ",
+            "UPDATE device",
+            "<set>",
             "<if test='request.deviceName != null'>device_name = #{request.deviceName}, </if>",
             "<if test='request.deviceType != null'>device_type = #{request.deviceType}, </if>",
             "<if test='request.deviceDescription != null'>device_description = #{request.deviceDescription}, </if>",
             "<if test='request.lastUpdate != null'>last_update = #{request.lastUpdate}, </if>",
             "<if test='request.isActive != null'>is_active = #{request.isActive} </if>",
+            "</set>",
             "WHERE device_id = #{deviceId}",
             "</script>"
     })

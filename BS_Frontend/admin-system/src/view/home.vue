@@ -135,6 +135,9 @@
 
 <script>
 import Breadcrumb from "../components/Breadcrumb.vue";
+import EditPasswordRequest from "../params/EditPasswordRequest" // 引入修改密码请求参数实例
+import axios from '../util/axiosConfig'; // 引入axios实例
+
 export default {
   components: { Breadcrumb },
   components: {},
@@ -177,21 +180,41 @@ export default {
     // 修改密码
     editPassword () {
       this.$refs.editPasswordForm.validate(async (valid) => {
-        if (!valid) return;
+        if (!valid) {
+          console.log('error submit!!');
+          this.$message.error("表单内容不符合规范！");
+          return false;
+        }
         if (this.editPasswordForm.newPassword != this.editPasswordForm.confirmPassword) {
           return this.$message.error("两次密码不正确，请重新输入！");
         }
-        // 请求接口
-        const { data: res } = await this.$axios.post(
-          "/user/updatePassword",
-          this.editPasswordForm
+
+        // 创建 EditPasswordRequest 对象
+        const editPasswordRequest = new EditPasswordRequest(
+          this.$store.state.username, // 从vuex获取username
+          this.editPasswordForm.oldPassword,
+          this.editPasswordForm.newPassword
         );
-        if (res.success) {
-          this.$message.success("密码修改成功，请重新登录！");
-          sessionStorage.clear();
-          this.$router.push("/login");
-        } else {
-          return this.$message.error(res.msg);
+        console.log(editPasswordRequest)
+        try {
+          // 请求接口
+          const { data: res } = await axios.post(
+            "/user/updatePassword",
+            editPasswordRequest
+          );
+          console.log(res)
+          if (res.success) {
+            this.$message.success("密码修改成功，请重新登录！");
+            // 清除 Vuex 中的用户信息
+            this.$store.commit("logout");
+            sessionStorage.clear();
+            this.$router.push("/login");
+          } else {
+            return this.$message.error(res.msg);
+          }
+        } catch (error) {
+          console.error("请求失败:", error);
+          this.$message.error("服务器连接失败，请稍后重试...");
         }
       });
     },
@@ -209,6 +232,8 @@ export default {
         type: "warning",
       })
         .then(() => {
+          // 清除 Vuex 中的用户信息
+          this.$store.commit("logout");
           // 清除缓存
           sessionStorage.clear();
           this.$router.push("/login");

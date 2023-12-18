@@ -113,6 +113,7 @@ public class UserService {
                 return Result.error("用户不存在");
             }
 
+            System.out.println("原密码: "+user.getPassword()+" 传入的旧密码: "+oldPassword);
             // 验证旧密码是否正确
             if (!user.getPassword().equals(oldPassword)) {
                 return Result.error("旧密码不正确");
@@ -165,7 +166,7 @@ public class UserService {
             if (updateRowCount > 0) {
                 return Result.success("个人信息编辑成功");
             } else {
-                return Result.error("个人信息编辑失败");
+                return Result.error("个人信息编辑失败或没有修改任何信息");
             }
         } catch (Exception e) {
             log.error("编辑个人信息失败：" + e.getMessage());
@@ -181,6 +182,27 @@ public class UserService {
             e.printStackTrace();
             // handle exceptions or return null based on requirements
             return null;
+        }
+    }
+
+    /**
+     * 根据user_id重新获取用户信息
+     *
+     * @param userId 用户id
+     * @return 登录结果的response类（存储用户信息和token）
+     */
+    public Result<LoginResponse> getUserInfo(Integer userId) {
+        try {
+            // 检查用户是否存在
+            User user = userMapper.findById(userId);
+            if (user == null) {
+                return Result.error("用户不存在");
+            } else {
+                    return createLoginResponse(user);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取用户信息失败：" + e.getMessage());
         }
     }
 

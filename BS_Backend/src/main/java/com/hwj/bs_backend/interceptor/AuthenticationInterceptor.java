@@ -24,7 +24,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 
     public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object object) throws Exception {
         // 从 http 请求头中取出 token
-        String token = httpServletRequest.getHeader("token");
+        String token = httpServletRequest.getHeader("Authorization");
         // 判断当前拦截到的是Controller的方法还是其他资源
         if (!(object instanceof HandlerMethod handlerMethod)) {
             //当前拦截到的不是动态方法，直接放行

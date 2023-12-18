@@ -90,6 +90,10 @@
 </template>
 
 <script>
+import { mapMutations } from 'vuex';
+import axios from '../util/axiosConfig'; // 引入axios实例
+import RegisterParams from '../params/RegisterParams'; // 引入请求体参数示例
+
 export default {
   components: {},
   props: {},
@@ -97,6 +101,8 @@ export default {
     return {
       // 注册窗口开启标志
       registerDialog: false,
+      loginLoading: false,
+      userToken: '',
       loginForm: {
         username: "",
         password: ""
@@ -142,34 +148,44 @@ export default {
   watch: {},
   computed: {},
   methods: {
+    ...mapMutations(['changeLogin']),
     // 登录处理函数
     handleLogin (formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          alert('login!');
-
-          // TODO1: 强行跳转，后期需要修改
-          this.$router.push("/home");
-
-          this.loginLoading = true;
-          this.$axios
-            .post("/auth/login", this.form)
+          axios.post("/user/login", this.loginForm)
             .then((res) => {
+              console.log(res.data);
               if (res.data.success) {
-                sessionStorage.setItem("user", JSON.stringify(res.data.data.user));
-                sessionStorage.setItem("token", res.data.token);
+                const userData = {
+                  token: res.data.data.token,
+                  email: res.data.data.email,
+                  phone: res.data.data.phone,
+                  userId: res.data.data.userId,
+                  username: res.data.data.username,
+                };
+                console.log(userData)
+                // 将用户信息保存到 Vuex 中
+                this.changeLogin(userData);
+
+                // sessionStorage.setItem("user", JSON.stringify(res.data.data.user));
+                // sessionStorage.setItem("token", res.data.token);
                 this.$router.push("/home");
+                this.$message.success("登录成功")
+                this.loginLoading = true;
               } else {
                 this.$message.error(res.data.msg);
                 this.loginLoading = false;
               }
             })
             .catch((err) => {
+              console.log(err)
               this.$message.error("服务器连接失败，请稍后重试......");
               this.loginLoading = false;
             });
         } else {
           console.log('error submit!!');
+          this.$message.error("表单内容不符合规范！");
           return false;
         }
       });
@@ -179,29 +195,44 @@ export default {
       this.$refs[formName].validate(async (valid) => {
         if (!valid) {
           console.log('error submit!!');
+          this.$message.error("表单内容不符合规范！");
           return false;
         }
         if (this.registerForm.newPassword != this.registerForm.confirmPassword) {
           return this.$message.error("两次密码不正确，请重新输入！");
         }
-        // 请求接口
-        const { data: res } = await this.$axios.post(
-          "/auth/register",
-          this.registerForm
+        // 创建 RegisterParams 对象
+        const registerParams = new RegisterParams(
+          this.registerForm.username,
+          this.registerForm.confirmPassword,
+          this.registerForm.email,
+          this.registerForm.phone
         );
-        if (res.success) {
-          this.$message.success("注册成功，请登录！");
-          this.$router.push("/login");
-        } else {
-          return this.$message.error(res.msg);
+
+        // 请求接口
+        try {
+          const { data: res } = await axios.post("/user/register", registerParams);
+
+          if (res.success) {
+            this.$message.success("注册成功，请登录！");
+            // 关闭注册表单
+            this.closeRegister();
+          } else {
+            return this.$message.error(res.msg);
+          }
+        } catch (error) {
+          console.error("请求失败:", error);
+          this.$message.error("服务器连接失败，请稍后重试...");
         }
       });
     },
     // 取消注册
     closeRegister () {
       this.registerDialog = false;
-      // 坑：resetFields 方法只能重置带有 props 属性的元素
-      this.$refs.registerForm.resetFields();
+      // 检查是否存在 $refs.registerForm
+      if (this.$refs.registerForm) {
+        this.$refs.registerForm.resetFields();
+      }
     },
 
   },

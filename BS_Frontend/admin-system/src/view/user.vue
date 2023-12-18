@@ -11,9 +11,9 @@
         </el-avatar>
         <!-- 用户简略信息区域 -->
         <div class="header_info">
-          <!-- 用户名 TODO:后续要改为username -->
+          <!-- 用户名  -->
           <div style="margin-bottom: 10px;font-weight: bold;font-size: 18px;">{{username}}</div>
-          <!-- 邮箱 TODO:后续要改为email -->
+          <!-- 邮箱  -->
           <div style="color: gray;font-size: 14px;">{{ email }}</div>
         </div>
       </div>
@@ -133,15 +133,17 @@
 </template>
 
 <script>
+import EditPasswordRequest from "../params/EditPasswordRequest" // 引入修改密码请求参数实例
+import EditUserInfoRequest from "../params/EditUserInfoRequest"; // 引入编辑个人信息请求参数实例
+import axios from '../util/axiosConfig'; // 引入axios实例
+import { mapState, mapMutations } from "vuex";
+
+
 export default {
   components: {},
   props: {},
   data () {
     return {
-      // 存储全局个人信息 (TODO:后续可能改为Vuex)
-      username: "hwj",
-      email: "test@zju.edu.cn",
-      phone: "188888888888",
       // 编辑个人信息dialog的开关
       editUserInfoDialog: false,
       // 编辑个人信息的表单
@@ -177,48 +179,124 @@ export default {
     };
   },
   watch: {},
-  computed: {},
+  computed: {
+    ...mapState(["username", "email", "phone"]),
+  },
   methods: {
+    ...mapMutations(['changeLogin']),
     // 取消编辑个人信息
     closeEditUserInfo () {
       this.editUserInfoDialog = false;
       // resetFields 方法只能重置带有 props 属性的元素
       this.$refs.editUserInfoForm.resetFields();
     },
+    // 重新获取用户个人信息
+    async getUserInfo () {
+      try {
+        const response = await axios.get("/user/getUserInfo", {
+          params: {
+            user_id: this.$store.state.userId,
+          },
+        });
+
+        const { data: res } = response;
+        console.log(res)
+        if (res.success) {
+          // 更新 Vuex 中的用户信息
+          const userData = {
+            token: res.data.token,
+            email: res.data.email,
+            phone: res.data.phone,
+            userId: res.data.userId,
+            username: res.data.username,
+          };
+          console.log(userData)
+          // 将用户信息保存到 Vuex 中
+          this.changeLogin(userData);
+        } else {
+          this.$message.error(res.message);
+        }
+      } catch (error) {
+        console.error("请求失败:", error);
+        this.$message.error("服务器连接失败，请稍后重试...");
+      }
+    },
     // 编辑个人信息处理函数
     editUserInfo () {
       this.$refs.editUserInfoForm.validate(async (valid) => {
-        if (!valid) return;
-        // 请求接口
-        const { data: res } = await this.$axios.post(
-          "/user/editUserInfo",
-          this.editUserInfoForm
+        if (!valid) {
+          console.log('error submit!!');
+          this.$message.error("表单内容不符合规范！");
+          return false;
+        }
+        // 构造请求参数
+        const editUserInfoRequest = new EditUserInfoRequest(
+          this.$store.state.userId, // 从vuex获取userId
+          // 使用 trim() 删除前后空格，避免将空字符串传递给后端
+          this.editUserInfoForm.new_username.trim() || null,
+          this.editUserInfoForm.new_email.trim() || null,
+          this.editUserInfoForm.new_phone.trim() || null
         );
-        if (res.success) {
-          this.$message.success("密码修改成功，请重新登录！");
-        } else {
-          return this.$message.error(res.msg);
+        console.log(editUserInfoRequest);
+
+        try {
+          // 发送编辑个人信息请求
+          const { data: res } = await axios.post(
+            "/user/editUserInfo",
+            editUserInfoRequest
+          );
+          console.log(res)
+          if (res.success) {
+            this.$message.success("个人信息修改成功！");
+            // 重新获取用户个人信息
+            this.getUserInfo();
+          } else {
+            this.$message.error(res.message);
+          }
+        } catch (error) {
+          console.error("请求失败:", error);
+          this.$message.error("服务器连接失败，请稍后重试...");
         }
       });
     },
     // 修改密码
     editPassword () {
       this.$refs.editPasswordForm.validate(async (valid) => {
-        if (!valid) return;
+        if (!valid) {
+          console.log('error submit!!');
+          this.$message.error("表单内容不符合规范！");
+          return false;
+        }
         if (this.editPasswordForm.newPassword != this.editPasswordForm.confirmPassword) {
           return this.$message.error("两次密码不正确，请重新输入！");
         }
-        // 请求接口
-        const { data: res } = await this.$axios.post(
-          "/user/updatePassword",
-          this.editPasswordForm
+
+        // 创建 EditPasswordRequest 对象
+        const editPasswordRequest = new EditPasswordRequest(
+          this.$store.state.username, // 从vuex获取username
+          this.editPasswordForm.oldPassword,
+          this.editPasswordForm.newPassword
         );
-        if (res.success) {
-          this.$message.success("密码修改成功，请重新登录！");
-          sessionStorage.clear();
-          this.$router.push("/login");
-        } else {
-          return this.$message.error(res.msg);
+        console.log(editPasswordRequest)
+        try {
+          // 请求接口
+          const { data: res } = await axios.post(
+            "/user/updatePassword",
+            editPasswordRequest
+          );
+          console.log(res)
+          if (res.success) {
+            this.$message.success("密码修改成功，请重新登录！");
+            // 清除 Vuex 中的用户信息
+            this.$store.commit("logout");
+            sessionStorage.clear();
+            this.$router.push("/login");
+          } else {
+            return this.$message.error(res.msg);
+          }
+        } catch (error) {
+          console.error("请求失败:", error);
+          this.$message.error("服务器连接失败，请稍后重试...");
         }
       });
     },

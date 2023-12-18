@@ -49,7 +49,7 @@ public class UserController {
      * @return 返回修改密码结果
      */
     @PostMapping("/updatePassword")
-    // @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
+    @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
     public Result<String> updatePassword(@RequestBody PasswordRequest passwordRequest) {
         return userService.updatePassword(passwordRequest.getUsername(), passwordRequest.getOldPassword(), passwordRequest.getNewPassword());
     }
@@ -61,9 +61,21 @@ public class UserController {
      * @return 返回编辑个人信息结果
      */
     @PostMapping("/editUserInfo")
-    // @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
+    @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
     public Result<String> editUserInfo(@RequestBody UserInfoRequest userInfoRequest) {
+        System.out.println(userInfoRequest);
         return userService.editUserInfo(userInfoRequest.getUserId(), userInfoRequest.getNewUsername(), userInfoRequest.getNewEmail(), userInfoRequest.getNewPhone());
     }
 
+    /**
+     * 根据user_id重新获取用户信息
+     *
+     * @param userId 用户id
+     * @return 登录结果的response类（存储用户信息和token）
+     */
+    @GetMapping("/getUserInfo")
+    @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
+    public Result<LoginResponse> login(@RequestParam("user_id") Integer userId) {
+        return userService.getUserInfo(userId);
+    }
 }

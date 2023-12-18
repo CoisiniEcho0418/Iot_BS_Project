@@ -6,9 +6,8 @@ Vue.use(Router);
 const router = new Router({
   mode: "history", // 去掉路径中的 # 号
   routes: [
-    // TODO3: 为方便调试，将默认界面调整为home，后期要改为login
-    // { path: "/", redirect: "login" },
-    { path: "/", redirect: "home" },
+    { path: "/", redirect: "login" },
+    //{ path: "/", redirect: "home" },
     {
       path: "/login",
       meta: {
@@ -67,18 +66,15 @@ router.beforeEach((to, from, next) => {
   // 放行登录页面
   if (to.path === "/login") {
     return next();
-  }
-  // 获取token
-  const tokenStr = sessionStorage.getItem("token");
-  if (!tokenStr) {
-    // TODO2: 到时候需要将注释去掉（强行跳转）
-    // return next("/login");
-
-    next();
   } else {
-    next();
+    let token = localStorage.getItem("Authorization");
+
+    if (token === null || token === "") {
+      next("/login");
+    } else {
+      next();
+    }
   }
-  return next();
 });
 
 export default router;
