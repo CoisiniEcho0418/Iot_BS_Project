@@ -97,7 +97,7 @@ export default {
   },
   methods: {
     ...mapActions('devices', ['fetchUserDevices']),
-    ...mapActions('message', ['fetchTotalMessageCount']),
+    ...mapActions('message', ['fetchTotalMessageCount', 'fetchRecentlyMessageCount']),
     // 显示第一个图表信息
     async showFirstEcharts () {
       // 获取最近七天的日期（mm/dd的格式）
@@ -180,65 +180,67 @@ export default {
     // 显示第二个图表
     showSecondEcharts () {
       const countList = this.$store.getters["devices/getDeviceCountList"];
+      // 确保 countList 包含数据
+      if (countList.length > 0) {
+        var chartDom = document.getElementById('second-chart');
+        var myChart = this.$echarts.init(chartDom);
+        var option;
 
-      var chartDom = document.getElementById('second-chart');
-      var myChart = this.$echarts.init(chartDom);
-      var option;
-
-      option = {
-        title: {
-          text: '设备类型分布图'
-        },
-        tooltip: {
-          trigger: 'item'
-        },
-        legend: {
-          bottom: '-3%',
-          left: 'center',
-          width: "60%"
-        },
-        toolbox: {
-          show: true,
-          orient: 'vertical',
-          left: 'right',
-          feature: {
-            saveAsImage: { show: true },
-            dataView: { show: true, readOnly: false }
-          }
-        },
-        series: [
-          {
-            name: '该类型设备总数',
-            type: 'pie',
-            radius: ['40%', '70%'],
-            avoidLabelOverlap: false,
-            itemStyle: {
-              borderRadius: 10,
-              borderColor: '#fff',
-              borderWidth: 2
-            },
-            label: {
-              show: false,
-              position: 'center'
-            },
-            emphasis: {
+        option = {
+          title: {
+            text: '设备类型分布图'
+          },
+          tooltip: {
+            trigger: 'item'
+          },
+          legend: {
+            bottom: '-3%',
+            left: 'center',
+            width: "60%"
+          },
+          toolbox: {
+            show: true,
+            orient: 'vertical',
+            left: 'right',
+            feature: {
+              saveAsImage: { show: true },
+              dataView: { show: true, readOnly: false }
+            }
+          },
+          series: [
+            {
+              name: '该类型设备总数',
+              type: 'pie',
+              radius: ['40%', '70%'],
+              avoidLabelOverlap: false,
+              itemStyle: {
+                borderRadius: 10,
+                borderColor: '#fff',
+                borderWidth: 2
+              },
               label: {
-                show: true,
-                fontSize: 40,
-                fontWeight: 'bold'
-              }
-            },
-            labelLine: {
-              show: false
-            },
-            data: countList.map((count, index) => ({
-              value: count,
-              name: this.mapDeviceType(index + 1),
-            })),
-          }
-        ]
-      };
-      myChart.setOption(option);
+                show: false,
+                position: 'center'
+              },
+              emphasis: {
+                label: {
+                  show: true,
+                  fontSize: 40,
+                  fontWeight: 'bold'
+                }
+              },
+              labelLine: {
+                show: false
+              },
+              data: countList.map((count, index) => ({
+                value: count,
+                name: this.mapDeviceType(index + 1),
+              })),
+            }
+          ]
+        };
+        myChart.setOption(option);
+      }
 
     },
     // 显示第三个图表
@@ -249,89 +251,94 @@ export default {
       // 获取最近七天的正常消息数列表和不正常消息数列表
       const normalCountList = this.$store.getters["message/getNormalCount"];
       const abnormalCountList = this.$store.getters["message/getAbnormalCount"];
-      var chartDom = document.getElementById('third-chart');
-      var myChart = this.$echarts.init(chartDom);
-      var option;
 
-      const labelOption = {
-        show: true,
-        position: 'insideBottom',
-        distance: 15,
-        align: 'left',
-        verticalAlign: 'middle',
-        rotate: 90,
-        formatter: '{c}  {name|{a}}',
-        fontSize: 16,
-        rich: {
-          name: {}
-        }
-      };
-      option = {
-        title: {
-          text: '最近七天消息图'
-        },
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            type: 'shadow'
-          }
-        },
-        legend: {
-          bottom: '0%',
-          left: 'center',
-          data: ['正常', '异常']
-        },
-        toolbox: {
+      // 确保 normalCountList 和 abnormalCountList 包含数据
+      if (normalCountList.length > 0 && abnormalCountList.length > 0) {
+        var chartDom = document.getElementById('third-chart');
+        var myChart = this.$echarts.init(chartDom);
+        var option;
+
+        const labelOption = {
           show: true,
-          orient: 'vertical',
-          left: 'right',
-          top: 'center',
-          feature: {
-            mark: { show: true },
-            dataView: { show: true, readOnly: false },
-            magicType: { show: true, type: ['line', 'bar', 'stack'] },
-            restore: { show: true },
-            saveAsImage: { show: true }
+          position: 'insideBottom',
+          distance: 15,
+          align: 'left',
+          verticalAlign: 'middle',
+          rotate: 90,
+          formatter: '{c}  {name|{a}}',
+          fontSize: 16,
+          rich: {
+            name: {}
           }
-        },
-        xAxis: [
-          {
-            type: 'category',
-            axisTick: { show: false },
-            data: recentSevenDaysFormatted
-          }
-        ],
-        yAxis: [
-          {
-            type: 'value'
-          }
-        ],
-        series: [
-          {
-            name: '正常',
-            type: 'bar',
-            barGap: 0,
-            label: labelOption,
-            emphasis: {
-              focus: 'series'
-            },
-            color: "#66b1ff",
-            data: normalCountList
+        };
+        option = {
+          title: {
+            text: '最近七天消息图'
           },
-          {
-            name: '异常',
-            type: 'bar',
-            label: labelOption,
-            emphasis: {
-              focus: 'series'
-            },
-            color: "#ee360d",
-            data: abnormalCountList
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+              type: 'shadow'
+            }
           },
-        ]
-      };
+          legend: {
+            bottom: '0%',
+            left: 'center',
+            data: ['正常', '异常']
+          },
+          toolbox: {
+            show: true,
+            orient: 'vertical',
+            left: 'right',
+            top: 'center',
+            feature: {
+              mark: { show: true },
+              dataView: { show: true, readOnly: false },
+              magicType: { show: true, type: ['line', 'bar', 'stack'] },
+              restore: { show: true },
+              saveAsImage: { show: true }
+            }
+          },
+          xAxis: [
+            {
+              type: 'category',
+              axisTick: { show: false },
+              data: recentSevenDaysFormatted
+            }
+          ],
+          yAxis: [
+            {
+              type: 'value'
+            }
+          ],
+          series: [
+            {
+              name: '正常',
+              type: 'bar',
+              barGap: 0,
+              label: labelOption,
+              emphasis: {
+                focus: 'series'
+              },
+              color: "#66b1ff",
+              data: normalCountList
+            },
+            {
+              name: '异常',
+              type: 'bar',
+              label: labelOption,
+              emphasis: {
+                focus: 'series'
+              },
+              color: "#ee360d",
+              data: abnormalCountList
+            },
+          ]
+        };
 
-      myChart.setOption(option);
+        myChart.setOption(option);
+      }
+
 
     },
     getRecentSevenDays () {
@@ -380,15 +387,20 @@ export default {
   created () {
     // 调用 Vuex action 来获取设备数据
     this.fetchUserDevices();
-    console.log("在Overview中调用了fetchUserDevices")
     this.fetchTotalMessageCount();
-    console.log("在Overview中调用了fetchTotalMessageCount")
+    this.fetchRecentlyMessageCount();
 
   },
   mounted () {
-    this.showFirstEcharts();
-    this.showSecondEcharts();
-    this.showThirdEcharts();
+    this.$nextTick(async () => {
+      await this.fetchUserDevices();
+      await this.fetchTotalMessageCount();
+      await this.fetchRecentlyMessageCount();
+
+      this.showFirstEcharts();
+      this.showSecondEcharts();
+      this.showThirdEcharts();
+    });
   }
 };
 </script>

@@ -207,6 +207,11 @@ export default {
             lng: item.longitude,
             lat: item.latitude
           }));
+          // 更新地图的center
+          if (responseData.data[0]) {
+            this.map.center.lng = responseData.data[0].longitude
+            this.map.center.lat = responseData.data[0].latitude
+          }
           // 更新messageData和total
           this.messageData = responseData.data;
           this.total = responseData.data.length;
