@@ -1,10 +1,7 @@
 package com.hwj.bs_backend.mapper;
 
 
-import com.hwj.bs_backend.param.DeviceAddRequest;
-import com.hwj.bs_backend.param.DeviceCountResponse;
-import com.hwj.bs_backend.param.DeviceListResponse;
-import com.hwj.bs_backend.param.DeviceUpdateRequest;
+import com.hwj.bs_backend.param.*;
 import org.apache.ibatis.annotations.*;
 import com.hwj.bs_backend.pojo.Device;
 
@@ -80,4 +77,36 @@ public interface DeviceMapper {
             "ORDER BY date ASC")
     // 按照日期升序排序
     List<DeviceCountResponse> getNewDevicesCount(@Param("userId") Integer userId, @Param("today") Date today);
+
+    /**
+     * 根据查询条件返回分页数据
+     *
+     * @param deviceSearchRequest 查询条件
+     * @param offset               偏移量（(page - 1) * pageSize）
+     * @param pageSize             页的大小
+     * @return 分页结果
+     */
+    @SelectProvider(type = DeviceSqlProvider.class, method = "searchDevicesWithPaginationSql")
+    List<DeviceListResponse> searchDevicesWithPagination(
+            @Param("searchRequest") DeviceSearchRequest deviceSearchRequest,
+            @Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    /**
+     * 计算分页获得数据数量
+     *
+     * @param deviceSearchRequest 查询请求条件
+     * @return Total count
+     */
+    @SelectProvider(type = DeviceSqlProvider.class, method = "countDevicesSql")
+    int countDevices(@Param("searchRequest") DeviceSearchRequest deviceSearchRequest);
+
+    /**
+     * 删除设备
+     *
+     * @param deviceId 设备ID
+     * @return 删除的记录数
+     */
+    @Delete("DELETE FROM device WHERE device_id = #{deviceId}")
+    int deleteDevice(@Param("deviceId") String deviceId);
+
 }

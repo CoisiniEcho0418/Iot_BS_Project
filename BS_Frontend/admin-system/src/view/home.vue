@@ -140,7 +140,6 @@ import axios from '../util/axiosConfig'; // 引入axios实例
 
 export default {
   components: { Breadcrumb },
-  components: {},
   props: {},
   data () {
     return {
@@ -170,7 +169,11 @@ export default {
     };
   },
   watch: {},
-  computed: {},
+  computed: {
+    userDevices () {
+      return this.$store.getters['devices/getUserDevices'];
+    },
+  },
   methods: {
     // 保存菜单激活路径
     saveAcitivePath (path) {
@@ -244,6 +247,10 @@ export default {
     },
   },
   created () {
+    this.$store.dispatch("devices/fetchUserDevices"); // 向后端发请求获取用户所属设备的相关信息
+    console.log("在Home中调用了fetchUserDevices")
+    this.$store.dispatch("message/fetchRecentlyMessageCount"); // 向后端发请求获取最近七天设备消息
+    console.log("在Home中调用了fetchRecentlyMessageCount")
     this.activePath = sessionStorage.getItem("activePath") ? sessionStorage.getItem("activePath") : "/index";
   },
   mounted () { }
@@ -267,6 +274,7 @@ export default {
 }
 .main {
   background: #f2f3f5;
+  overflow-y: hidden; /* 隐藏垂直滚动条 */
   /* background: rgba(255, 0, 255, 0.3); */
 }
 .footer {

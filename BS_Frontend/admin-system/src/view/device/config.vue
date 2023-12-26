@@ -213,15 +213,18 @@
         <el-table-column prop="index"
                          label="序号"
                          width="60">
+          <template slot-scope="scope">
+            {{ scope.$index + 1 }}
+          </template>
         </el-table-column>
-        <el-table-column prop="device_id"
+        <el-table-column prop="deviceId"
                          label="设备id">
         </el-table-column>
-        <el-table-column prop="device_name"
+        <el-table-column prop="deviceName"
                          label="设备名称"
                          show-overflow-tooltip>
         </el-table-column>
-        <el-table-column prop="device_type"
+        <el-table-column prop="deviceType"
                          label="设备类型">
           <template slot-scope="scope">
             <div>
@@ -233,23 +236,25 @@
           4: "可穿戴设备",
           5: "工业智能网关",
 		  6:"其他"
-        }[scope.row.device_type]
+        }[scope.row.deviceType]
       }}
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="device_description"
+        <el-table-column prop="deviceDescription"
                          label="设备描述"
                          show-overflow-tooltip>
         </el-table-column>
-        <el-table-column prop="registration_time"
+        <el-table-column prop="registrationTime"
                          label="创建日期">
         </el-table-column>
-        <el-table-column prop="is_active"
+        <el-table-column prop="isActive"
                          label="设备状态">
           <template slot-scope="scope">
             <div>
-              {{ scope.row.is_active == 0 ? "离线" : "活跃" }}
+              <el-tag :type="scope.row.isActive == 0 ? 'danger' : 'success'"
+                      disable-transitions>{{scope.row.isActive == 0 ? '离线' : '活跃'}}
+              </el-tag>
             </div>
           </template>
         </el-table-column>
@@ -258,14 +263,14 @@
           <template slot-scope="scope">
             <el-button type="success"
                        size="small"
-                       @click="editDeviceDialogHandler(scope.row.device_id) ">编辑</el-button>
+                       @click="editDeviceDialogHandler(scope.row.deviceId) ">编辑</el-button>
             <el-button type="danger"
                        size="small"
-                       @click="deleteDevice(scope.row.device_id)">删除</el-button>
+                       @click="deleteDevice(scope.row.deviceId)">删除</el-button>
 
             <el-button type="primary"
                        size="small"
-                       @click="openDetail(scope.row.device_id)">详情</el-button>
+                       @click="openDetail(scope.row.deviceId)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -283,6 +288,8 @@
 </template>
 
 <script>
+import axios from '../../util/axiosConfig'; // 引入axios实例
+
 export default {
   components: {},
   props: {},
@@ -304,28 +311,17 @@ export default {
         is_active: null
       },
       // 设备的数据表信息  1:智能家居 2:生命安全设备 3:车载设备 4:可穿戴设备 5:工业智能网关 6:其他
-      tableData: [
-        {
-          index: 1,
-          device_id: 'd0001',
-          device_name: '测试1',
-          device_type: 1,
-          device_description: '一个智能家居设备',
-          registration_time: '2023/10/22 12:00:00',
-          is_active: 1,
-        },
-        {
-          index: 2,
-          device_id: 'd0002',
-          device_name: '测试2',
-          device_type: 4,
-          device_description: '一个可穿戴设备',
-          registration_time: '2023/10/22 13:00:00',
-          is_active: 0,
-        },
-      ],
+      /* 
+    deviceDescription: (...),
+    deviceId: (...),
+    deviceName: (...),
+    deviceType: (...),
+    isActive: (...),
+    registrationTime: (...),
+      */
+      tableData: [],
       // 设备总数
-      total: 2,
+      total: 0,
       // 查询模块里的设备类型列表
       deviceTypeList: [
         { id: 1, type: "智能家居" },
@@ -372,7 +368,7 @@ export default {
         is_active: null,
         last_update: ""
       },
-      // 新增设备表单校验规则
+      // 编辑设备表单校验规则
       editDeviceRule: {
 
       },
@@ -410,59 +406,175 @@ export default {
         query: queryParams,
       });
     },
-    // 切换tab
+    // 切换tab(实质上是根据设备状态（is_active）来查询)
     changeRadio (value) {
-      this.searchForm.is_active = value;
-      this.getPageList();
+      // 判断是否选择了全部，如果没有选择全部，则设置is_active参数
+      if (this.searchForm.is_active !== null) {
+        this.searchForm.is_active = this.searchForm.is_active === 'null' ? null : parseInt(this.searchForm.is_active);
+      }
+      console.log("searchForm.is_active:")
+      console.log(this.searchForm.is_active)
+      const flag = this.getPageList();
+      if (flag) {
+        this.$message.success("查询成功！");
+      } else {
+        this.$message.error("查询失败！")
+      }
     },
     // 删除设备
-    deleteDevice (device_id) {
+    async deleteDevice (device_id) {
+      try {
+        this.$confirm('此操作将永久删除该设备, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'error'
+        }).then(async () => {
+          // 发送删除设备的请求
+          const { data: res } = await axios.delete(`/device/delete/${device_id}`);
+          console.log("删除结果：", res)
 
+          if (res.success) {
+            this.$message.success("设备删除成功！");
+            // 删除成功后刷新页面
+            this.getPageList();
+          } else {
+            this.$message.error(res.msg);
+          }
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });
+        });
+
+      } catch (error) {
+        console.error('Error deleting device:', error);
+        this.$message.error("删除设备出现异常！");
+      }
     },
     // 查看设备详情
-    openDetail (device_id) {
+    async openDetail (device_id) {
+      try {
+        // 发送删除设备的请求
+        const { data: res } = await axios.get(`/device/${device_id}`);
+        console.log("详情结果：", res)
+        if (res.success) {
+          this.$alert("上次更新日期：" + res.data.lastUpdate, '详情', {
+            confirmButtonText: '确定',
+            // callback: action => {
+            //   this.$message({
+            //     type: 'info',
+            //     message: `action: ${action}`
+            //   });
+            // }
+          });
+          // 删除成功后刷新页面
+          this.getPageList();
+        } else {
+          this.$message.error(res.msg);
+        }
 
+
+      } catch (error) {
+        console.error('Error open detail:', error);
+        this.$message.error("查看详情出现异常！");
+      }
     },
     // 获取设备信息（在初始化时调用）
     async getPageList () {
-      // TODO: 请求接口还需要修改
-      const result = await this.$axios.get('/device/user/{user_id}', {
-        params: this.searchForm,
-      });
-      if (result.data.success) {
-        this.tableData = result.data.data.records;
-        this.total = result.data.data.total;
-      } else {
-        this.$message.error(result.data.message);
+      try {
+        const result = await axios.get('/device/search-with-pagination', {
+          params: {
+            user_id: this.$store.state.userId,
+            ...this.searchForm,
+          },
+        });
+        console.log("分页请求结果:")
+        console.log(result)
+        if (result.data.success) {
+          this.tableData = result.data.data.data;
+          console.log("表格数据：")
+          console.log(this.tableData)
+          this.total = result.data.data.totalCount;
+          return true;
+        } else {
+          this.$message.error(result.data.msg);
+          return false;
+        }
+      } catch (error) {
+        console.error('Error fetching page list:', error);
+        throw error; // 抛出错误，让上层调用者处理
       }
     },
     // 查询模块的查询事件
-    handleSearch () {
-      this.searchForm.current = 1;
-      this.getPageList();
+    async handleSearch () {
+      this.searchForm.current = 1; // 重置页码为第一页
+
+      try {
+        const flag = await this.getPageList();
+        if (flag) {
+          this.$message.success("查询成功！");
+        } else {
+          this.$message.error("查询失败！");
+        }
+      } catch (error) {
+        console.error('Error handling search:', error);
+        this.$message.error("查询出现异常！");
+      }
     },
     // 查询模块的重置事件
     handleClear () {
-      // resetFields()是组件自带的重置函数
-      this.$refs["searchForm"].resetFields();
-      this.getPageList();
+      try {
+        // resetFields()是组件自带的重置函数
+        this.$refs["searchForm"].resetFields();
+
+        const flag = this.getPageList();
+        if (flag) {
+          this.$message.success("重置成功！");
+        } else {
+          this.$message.error("出现异常！")
+        }
+      } catch (error) {
+        console.error('Error handling search:', error);
+        this.$message.error("重置异常！");
+      }
     },
     // 新增设备
     addDevice () {
-      this.$refs.addDeviceForm.validate(async (valid) => {
-        if (!valid) return;
-        // 请求接口  TODO:请求参数还需要加上user_id和注册日期
-        const { data: res } = await this.$axios.post(
-          "/device/add",
-          this.addDeviceForm
-        );
-        if (res.success) {
-          this.$message.success("设备新增成功！");
-          alert("新增设备成功！");
-        } else {
-          return this.$message.error(res.msg);
-        }
-      });
+      try {
+        this.$refs.addDeviceForm.validate(async (valid) => {
+          if (!valid) {
+            console.log('error submit!!');
+            this.$message.error("表单内容不符合规范！");
+            return false;
+          }
+
+          // 将user_id添加到请求参数中
+          const requestData = {
+            ...this.addDeviceForm,
+            user_id: this.$store.state.userId,
+          };
+          // 发送添加设备的请求
+          const { data: res } = await axios.post(
+            "/device/add",
+            requestData
+          );
+
+          if (res.success) {
+            this.$message.success("设备新增成功！");
+            this.addDeviceDialog = false; // 关闭对话框
+            this.$refs.addDeviceForm.resetFields(); // 重置表单
+
+            // 成功添加后，发送分页请求
+            this.getPageList();
+          } else {
+            return this.$message.error(res.msg);
+          }
+        });
+      } catch (error) {
+        console.error('新增设备时出错：', error);
+      }
+
     },
     // 取消新增设备（重置表单）
     closeAddDevice () {
@@ -475,21 +587,44 @@ export default {
       this.addDeviceForm.registration_time = this.$moment().format('YYYY-MM-DD HH:mm:ss')
     },
     // 修改设备配置
-    editDevice () {
+    async editDevice () {
+
       this.$refs.editDeviceForm.validate(async (valid) => {
-        if (!valid) return;
-        // 请求接口  TODO:请求参数还需要加上user_id和注册日期
-        const { data: res } = await this.$axios.post(
-          "/device/add",
-          this.editDeviceForm
-        );
-        if (res.success) {
-          this.$message.success("设备新增成功！");
-          alert("新增设备成功！");
-        } else {
-          return this.$message.error(res.msg);
+        if (!valid) {
+          console.log('error submit!!');
+          this.$message.error("表单内容不符合规范！");
+          return false;
+        }
+        try {
+          const { data: res } = await axios.put(`/device/update/${this.editDeviceForm.device_id}`, {
+            // 使用 trim() 删除前后空格，避免将空字符串传递给后端
+            device_name: this.editDeviceForm.device_name.trim() || null,
+            device_type: this.editDeviceForm.device_type,
+            device_description: this.editDeviceForm.device_description.trim() || null,
+            last_update: this.editDeviceForm.last_update,
+            is_active: this.editDeviceForm.is_active,
+          });
+
+          console.log("修改设备配置结果:")
+          console.log(res)
+
+          if (res.success) {
+            this.$message.success(res.msg);
+            this.editDeviceDialog = false;
+            this.$refs.editDeviceForm.resetFields();
+            this.getPageList(); // 更新后刷新页面
+            return true;
+          } else {
+            this.$message.error(res.msg);
+            return false
+          }
+        } catch (error) {
+          console.error('更新设备配置时出错：', error);
+          return false
         }
       });
+
+
     },
     // 编辑设备dialog打开的回调函数
     openEditDeviceDialog () {
@@ -511,10 +646,12 @@ export default {
 
   },
   created () {
-    // TODO:初始化数据列表  
-    // this.getPageList();
+    // 模拟发送一次分页请求来获取初始数据
+    this.handleSearch();
   },
-  mounted () { }
+  mounted () {
+
+  }
 };
 </script>
 <style >

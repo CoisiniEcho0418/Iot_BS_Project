@@ -6,23 +6,23 @@
       <div class="block1">
         <el-card class="info">
           <el-button type="primary"
-                     icon="el-icon-user-solid"
+                     icon="el-icon-bangzhu"
                      circle />
-          <h2 class="num-info">112356</h2>
+          <h2 class="num-info">{{ totalDevices }}</h2>
           <p class="desc">总设备数</p>
         </el-card>
         <el-card class="info">
           <el-button type="success"
-                     icon="el-icon-s-data"
+                     icon="el-icon-connection"
                      circle />
-          <h2 class="num-info">66789</h2>
+          <h2 class="num-info">{{activeDevices}}</h2>
           <p class="desc">活跃设备数</p>
         </el-card>
         <el-card class="info">
           <el-button type="danger"
-                     icon="el-icon-coin"
+                     icon="el-icon-message"
                      circle />
-          <h2 class="num-info">12457</h2>
+          <h2 class="num-info">{{ totalMessages }}</h2>
           <p class="desc">总消息数</p>
         </el-card>
       </div>
@@ -52,6 +52,10 @@
 </template>
 
 <script>
+// 在组件中引入 Vuex
+import { mapGetters, mapActions } from 'vuex';
+import axios from "../util/axiosConfig"
+
 export default {
   components: {},
   props: {},
@@ -60,23 +64,82 @@ export default {
     };
   },
   watch: {},
-  computed: {},
+  computed: {
+    ...mapGetters('devices', ['getUserDevices']),
+    ...mapGetters('message', ['getTotalMessageCount']),
+    totalDevices () {
+      // 获取后台传递的设备数
+      const backendTotalDevices = this.getUserDevices.length;
+      console.log(backendTotalDevices)
+      // 判断数据是否为空或 undefined，如果是，则赋值为0
+      return backendTotalDevices !== undefined && backendTotalDevices !== null
+        ? backendTotalDevices
+        : 0;
+    },
+    totalMessages () {
+      // 获取后台传递的总消息数
+      const backendTotalMessages = this.getTotalMessageCount;
+      console.log(backendTotalMessages)
+      // 判断数据是否为空或 undefined，如果是，则赋值为0
+      return backendTotalMessages !== undefined && backendTotalMessages !== null
+        ? backendTotalMessages
+        : 0;
+    },
+    activeDevices () {
+      // 获取后台传递的设备数
+      const backendActiveDevices = this.getUserDevices.filter(device => device.isActive).length;
+      console.log(backendActiveDevices)
+      // 判断数据是否为空或 undefined，如果是，则赋值为0
+      return backendActiveDevices !== undefined && backendActiveDevices !== null
+        ? backendActiveDevices
+        : 0;
+    },
+  },
   methods: {
+    ...mapActions('devices', ['fetchUserDevices']),
+    ...mapActions('message', ['fetchTotalMessageCount']),
     // 显示第一个图表信息
-    showFirstEcharts () {
+    async showFirstEcharts () {
+      // 获取最近七天的日期（mm/dd的格式）
+      const recentSevenDaysFormatted = this.getRecentSevenDaysFormatted();
+      console.log(recentSevenDaysFormatted);
+
+      const today = new Date().toISOString().split('T')[0];
+
+      const response = await axios.get('/device/new-devices-count', {
+        params: {
+          user_id: this.$store.state.userId,
+          today,
+        },
+      });
+      console.log("first table data:", response)
+
+      const counts = response.data.data || [];
+      // 获取后端返回的日期和对应的数量
+      const dateArray = counts.map(entry => entry.date);
+      const countArray = counts.map(entry => entry.count);
+
+      // 构造完整的七天数据，缺失的天数对应的数量设为0
+      const completeDateArray = this.getRecentSevenDays();
+      const completeCountArray = completeDateArray.map(date => {
+        const index = dateArray.indexOf(date);
+        return index !== -1 ? countArray[index] : 0;
+      });
+
+
       var chartDom = document.getElementById('first-chart');
       var myChart = this.$echarts.init(chartDom);
       var option;
 
       option = {
-        // title: {
-        //   text: 'Stacked Line'
-        // },
+        title: {
+          text: '最近七天新增设备数'
+        },
         tooltip: {
           trigger: 'axis'
         },
         legend: {
-          data: ['Email', 'Union Ads', 'Video Ads', 'Direct', 'Search Engine']
+          data: ['Number of New Devices in the Last Seven Days']
         },
         grid: {
           left: '3%',
@@ -85,48 +148,29 @@ export default {
           containLabel: true
         },
         toolbox: {
+          show: true,
+          orient: 'vertical',
+          left: 'right',
           feature: {
-            saveAsImage: {}
+            saveAsImage: { show: true },
+            dataView: { show: true, readOnly: false },
+
           }
         },
         xAxis: {
           type: 'category',
           boundaryGap: false,
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+          data: recentSevenDaysFormatted, // 用最近七天的日期代替
         },
         yAxis: {
           type: 'value'
         },
         series: [
           {
-            name: 'Email',
+            name: 'Number of New Devices in the Last Seven Days.',
             type: 'line',
             stack: 'Total',
-            data: [120, 132, 101, 134, 90, 230, 210]
-          },
-          {
-            name: 'Union Ads',
-            type: 'line',
-            stack: 'Total',
-            data: [220, 182, 191, 234, 290, 330, 310]
-          },
-          {
-            name: 'Video Ads',
-            type: 'line',
-            stack: 'Total',
-            data: [150, 232, 201, 154, 190, 330, 410]
-          },
-          {
-            name: 'Direct',
-            type: 'line',
-            stack: 'Total',
-            data: [320, 332, 301, 334, 390, 330, 320]
-          },
-          {
-            name: 'Search Engine',
-            type: 'line',
-            stack: 'Total',
-            data: [820, 932, 901, 934, 1290, 1330, 1320]
+            data: completeCountArray
           }
         ]
       };
@@ -135,21 +179,36 @@ export default {
     },
     // 显示第二个图表
     showSecondEcharts () {
+      const countList = this.$store.getters["devices/getDeviceCountList"];
+
       var chartDom = document.getElementById('second-chart');
       var myChart = this.$echarts.init(chartDom);
       var option;
 
       option = {
+        title: {
+          text: '设备类型分布图'
+        },
         tooltip: {
           trigger: 'item'
         },
         legend: {
-          top: '5%',
-          left: 'center'
+          bottom: '-3%',
+          left: 'center',
+          width: "60%"
+        },
+        toolbox: {
+          show: true,
+          orient: 'vertical',
+          left: 'right',
+          feature: {
+            saveAsImage: { show: true },
+            dataView: { show: true, readOnly: false }
+          }
         },
         series: [
           {
-            name: 'Access From',
+            name: '该类型设备总数',
             type: 'pie',
             radius: ['40%', '70%'],
             avoidLabelOverlap: false,
@@ -172,13 +231,10 @@ export default {
             labelLine: {
               show: false
             },
-            data: [
-              { value: 1048, name: 'Search Engine' },
-              { value: 735, name: 'Direct' },
-              { value: 580, name: 'Email' },
-              { value: 484, name: 'Union Ads' },
-              { value: 300, name: 'Video Ads' }
-            ]
+            data: countList.map((count, index) => ({
+              value: count,
+              name: this.mapDeviceType(index + 1),
+            })),
           }
         ]
       };
@@ -187,34 +243,147 @@ export default {
     },
     // 显示第三个图表
     showThirdEcharts () {
+      // 获取最近七天的日期（mm/dd的格式）
+      const recentSevenDaysFormatted = this.getRecentSevenDaysFormatted();
+      console.log("recentSevenDaysFormatted", recentSevenDaysFormatted);
+      // 获取最近七天的正常消息数列表和不正常消息数列表
+      const normalCountList = this.$store.getters["message/getNormalCount"];
+      const abnormalCountList = this.$store.getters["message/getAbnormalCount"];
       var chartDom = document.getElementById('third-chart');
       var myChart = this.$echarts.init(chartDom);
       var option;
 
-      option = {
-        legend: {},
-        tooltip: {},
-        dataset: {
-          source: [
-            ['product', '2021', '2022', '2023'],
-            ['Matcha Latte', 43.3, 85.8, 93.7],
-            ['Milk Tea', 83.1, 73.4, 55.1],
-            ['Cheese Cocoa', 86.4, 65.2, 82.5],
-            ['Walnut Brownie', 72.4, 53.9, 39.1]
-          ]
-        },
-        xAxis: { type: 'category' },
-        yAxis: {},
-        // Declare several bar series, each will be mapped
-        // to a column of dataset.source by default.
-        series: [{ type: 'bar' }, { type: 'bar' }, { type: 'bar' }]
+      const labelOption = {
+        show: true,
+        position: 'insideBottom',
+        distance: 15,
+        align: 'left',
+        verticalAlign: 'middle',
+        rotate: 90,
+        formatter: '{c}  {name|{a}}',
+        fontSize: 16,
+        rich: {
+          name: {}
+        }
       };
+      option = {
+        title: {
+          text: '最近七天消息图'
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          }
+        },
+        legend: {
+          bottom: '0%',
+          left: 'center',
+          data: ['正常', '异常']
+        },
+        toolbox: {
+          show: true,
+          orient: 'vertical',
+          left: 'right',
+          top: 'center',
+          feature: {
+            mark: { show: true },
+            dataView: { show: true, readOnly: false },
+            magicType: { show: true, type: ['line', 'bar', 'stack'] },
+            restore: { show: true },
+            saveAsImage: { show: true }
+          }
+        },
+        xAxis: [
+          {
+            type: 'category',
+            axisTick: { show: false },
+            data: recentSevenDaysFormatted
+          }
+        ],
+        yAxis: [
+          {
+            type: 'value'
+          }
+        ],
+        series: [
+          {
+            name: '正常',
+            type: 'bar',
+            barGap: 0,
+            label: labelOption,
+            emphasis: {
+              focus: 'series'
+            },
+            color: "#66b1ff",
+            data: normalCountList
+          },
+          {
+            name: '异常',
+            type: 'bar',
+            label: labelOption,
+            emphasis: {
+              focus: 'series'
+            },
+            color: "#ee360d",
+            data: abnormalCountList
+          },
+        ]
+      };
+
       myChart.setOption(option);
 
+    },
+    getRecentSevenDays () {
+      const days = [];
+
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        days.push(date.toISOString().split('T')[0]);
+      }
+
+      return days;
+    },
+    // 获取最近七天的日期，并以 mm/dd 格式输出
+    getRecentSevenDaysFormatted () {
+      const today = new Date();
+      const recentDaysFormatted = Array.from({ length: 7 }, (_, index) => {
+        const day = new Date(today);
+        day.setDate(today.getDate() - index);
+        return day.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' });
+      }).reverse(); // 反转数组以实现升序排列
+
+      return recentDaysFormatted;
+    },
+    // 根据设备类型编号映射设备类型名称
+    mapDeviceType (type) {
+      switch (type) {
+        case 1:
+          return "智能家居";
+        case 2:
+          return "生命安全设备";
+        case 3:
+          return "车载设备";
+        case 4:
+          return "可穿戴设备";
+        case 5:
+          return "工业智能网关";
+        case 6:
+          return "其他";
+        default:
+          return "未知";
+      }
     },
 
   },
   created () {
+    // 调用 Vuex action 来获取设备数据
+    this.fetchUserDevices();
+    console.log("在Overview中调用了fetchUserDevices")
+    this.fetchTotalMessageCount();
+    console.log("在Overview中调用了fetchTotalMessageCount")
+
   },
   mounted () {
     this.showFirstEcharts();

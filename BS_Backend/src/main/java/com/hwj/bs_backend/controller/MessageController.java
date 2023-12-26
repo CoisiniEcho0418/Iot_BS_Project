@@ -50,7 +50,7 @@ public class MessageController {
      * @param deviceId 目标设备的id
      * @return 设备历史消息列表
      */
-    @GetMapping("/message/device-history/{device_id}")
+    @GetMapping("/device-history/{device_id}")
     public Result<List<MessageResponse>> getDeviceHistory(
             @PathVariable("device_id") String deviceId) {
         return messageService.getDeviceHistory(deviceId);

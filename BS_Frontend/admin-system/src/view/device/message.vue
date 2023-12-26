@@ -7,12 +7,19 @@
           请选则您要查看的设备:
         </div>
         <el-select v-model="value"
+                   clearable
                    placeholder="请选择设备"
-                   class="mySelect">
+                   class="mySelect"
+                   @change="$forceUpdate()">
+          <!-- 调用forceUpdate()来强制刷新，使点击选中的项显示出来 -->
           <el-option v-for="item in deviceList"
-                     :key="item.id"
-                     :label="item.name"
-                     :value="item.name">
+                     :key="item.deviceId"
+                     :label="item.deviceName"
+                     :value="item.deviceId">
+            <span style="color: #409eff; float: left;">(name)</span>
+            <span style="float: left;">{{ item.deviceName }}</span>
+            <span style="color: #409eff; float: right;">(id)</span>
+            <span style="float: right;">{{ item.deviceId }}</span>
           </el-option>
         </el-select>
         <el-button type="primary"
@@ -27,16 +34,23 @@
         <el-table-column prop="index"
                          label="序号"
                          width="60">
+          <template slot-scope="scope">
+            {{ scope.$index + 1 }}
+          </template>
         </el-table-column>
-        <el-table-column prop="message_type"
+        <el-table-column prop="messageType"
                          width="140"
                          label="信息类别">
           <template slot-scope="scope">
-            <el-tag :type="scope.row.message_type === 0 ? 'success' : 'danger'"
-                    disable-transitions>{{scope.row.message_type === 0 ? '正常' : '异常'}}</el-tag>
+            <el-tag :type="scope.row.messageType === 0 ? 'success' : 'danger'"
+                    disable-transitions>{{scope.row.messageType === 0 ? '正常' : '异常'}}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="message_content"
+        <el-table-column prop="value"
+                         label="设备数据"
+                         width="140">
+        </el-table-column>
+        <el-table-column prop="messageContent"
                          label="信息内容"
                          show-overflow-tooltip>
         </el-table-column>
@@ -47,7 +61,7 @@
                          label="纬度"
                          show-overflow-tooltip>
         </el-table-column>
-        <el-table-column prop="message_time"
+        <el-table-column prop="timestamp"
                          label="时间">
         </el-table-column>
 
@@ -109,6 +123,8 @@
 </template>
 
 <script>
+import axios from '../../util/axiosConfig'; // 引入axios实例
+
 export default {
   components: {},
   props: {},
@@ -122,47 +138,37 @@ export default {
         },
         zoom: 10,
       },
-      // 可查看的设备的列表  TODO: 之后要改为vuex来赋值
-      deviceList: [
-        { id: "d0001", name: "智能家居" },
-        { id: "d0002", name: "可穿戴设备" }
-      ],
+      // 可查看的设备的列表 
+      deviceList: [],
       // 设备信息列表
+      /*  示例：
+    "messageId": 2,
+    "timestamp": "2023-12-17 20:35:00",
+    "messageType": 0,
+    "messageContent": "正常消息 2",
+    "latitude": 30.234567,
+    "longitude": 120.765432
+      */
       messageData: [
-        {
-          index: 1,
-          message_type: 0,
-          message_content: "device data message",
-          latitude: 30.915,
-          longitude: 119.804,
-          message_time: "2023-10-23 20:12:00"
-        },
-        {
-          index: 2,
-          message_type: 1,
-          message_content: "device data message",
-          latitude: 29.920,
-          longitude: 120.405,
-          message_time: "2023-10-23 20:13:00"
-        },
-        {
-          index: 3,
-          message_type: 1,
-          message_content: "device data message",
-          latitude: 30.407445,
-          longitude: 120.223493,
-          message_time: "2023-10-23 22:13:00"
-        }
+        // {
+        //   index: 1,
+        //   message_type: 0,
+        //   messageContent: "device data message",
+        //   latitude: 30.915,
+        //   longitude: 119.804,
+        //   timestamp: "2023-10-23 20:12:00",
+        // 	 value:90
+        // },
       ],
       // 信息总条数
-      total: 3,
+      total: 0,
       // 当前页
       current: 1,
       // 绘制折线的点的信息
       polylinePath: [
-        { lng: 119.804, lat: 30.915 },
-        { lng: 120.405, lat: 29.920 },
-        { lng: 120.223493, lat: 30.407445 }
+        // { lng: 119.804, lat: 30.915 },
+        // { lng: 120.405, lat: 29.920 },
+        // { lng: 120.223493, lat: 30.407445 }
       ],
 
     };
@@ -171,8 +177,46 @@ export default {
   computed: {},
   methods: {
     // 选取对应的设备消息
-    selectDevice () {
+    async selectDevice () {
+      // 获取当前选择的设备
+      const selectedDevice = this.deviceList.find(
+        (device) => device.deviceId === this.value
+      );
+      console.log("选中的设备:", selectedDevice)
 
+      if (selectedDevice) {
+        // 设置 this.value 为所选设备的 deviceId
+        this.value = selectedDevice.deviceId;
+        // 调用函数发送请求
+        this.fetchDeviceHistory(selectedDevice.deviceId);
+      }
+    },
+    // 发送请求获取设备历史消息
+    async fetchDeviceHistory (deviceId) {
+      try {
+        // 发起请求获取设备历史消息
+        const response = await axios.get(`/message/device-history/${deviceId}`);
+        const responseData = response.data;
+
+        console.log("设备消息返回结果:")
+        console.log(responseData);
+        if (responseData.success) {
+          this.$message.success("设备信息查询成功！");
+          // 将获取到的消息数据中的 longitude 和 latitude 加到 polylinePath 中
+          this.polylinePath = responseData.data.map(item => ({
+            lng: item.longitude,
+            lat: item.latitude
+          }));
+          // 更新messageData和total
+          this.messageData = responseData.data;
+          this.total = responseData.data.length;
+        } else {
+          this.$message.error(responseData.msg);
+        }
+
+      } catch (error) {
+        console.error('获取设备历史消息时发生错误:', error);
+      }
     },
     // 处理分页
     handleCurrentChange () {
@@ -187,8 +231,16 @@ export default {
     }
 
   },
-  created () { },
-  mounted () { }
+  created () {
+  },
+  mounted () {
+    // 在页面加载后调用 Vuex action 获取设备数据
+    this.$store.dispatch("devices/fetchUserDevices").then(() => {
+      // 在设备数据加载完成后更新 devicelist
+      this.deviceList = this.$store.getters["devices/getUserDevices"];
+      console.log(this.deviceList)
+    });
+  }
 };
 </script>
 <style scoped>
@@ -215,6 +267,7 @@ export default {
 .mySelect {
   display: flex;
   align-items: center;
+  width: 40%;
 }
 .map {
   width: 100%;

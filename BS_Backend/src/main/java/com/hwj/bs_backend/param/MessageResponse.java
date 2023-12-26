@@ -24,4 +24,5 @@ public class MessageResponse {
     private double latitude;
 
     private double longitude;
+    private int value;
 }

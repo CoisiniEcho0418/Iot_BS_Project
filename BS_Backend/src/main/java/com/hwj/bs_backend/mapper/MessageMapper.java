@@ -38,7 +38,7 @@ public interface MessageMapper {
      * @param deviceId 目标设备的id
      * @return 设备历史消息列表
      */
-    @Select("SELECT message_id, timestamp, message_type, message_content, latitude, longitude " +
+    @Select("SELECT message_id, timestamp, message_type, message_content, latitude, longitude, value " +
             "FROM message " +
             "WHERE device_id = #{deviceId} " +
             "ORDER BY timestamp DESC")
@@ -52,7 +52,10 @@ public interface MessageMapper {
      * @param today  当天的日期
      * @return 最近七天用户接收的消息数量
      */
-    @Select("SELECT DATE(m.timestamp) AS date, COUNT(*) AS count " +
+    @Select("SELECT DATE(m.timestamp) AS date, " +
+            "COUNT(*) AS count, " +
+            "SUM(CASE WHEN m.message_type = 0 THEN 1 ELSE 0 END) AS normalCount, " +
+            "SUM(CASE WHEN m.message_type = 1 THEN 1 ELSE 0 END) AS abnormalCount " +
             "FROM message m " +
             "JOIN device d ON m.device_id = d.device_id " +
             "WHERE d.user_id = #{userId} AND DATE(m.timestamp) BETWEEN DATE_SUB(#{today}, INTERVAL 6 DAY) AND #{today} " +

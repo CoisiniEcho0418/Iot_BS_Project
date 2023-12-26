@@ -1,10 +1,8 @@
 package com.hwj.bs_backend.controller;
 
-import com.hwj.bs_backend.param.DeviceAddRequest;
-import com.hwj.bs_backend.param.DeviceCountResponse;
-import com.hwj.bs_backend.param.DeviceListResponse;
-import com.hwj.bs_backend.param.DeviceUpdateRequest;
+import com.hwj.bs_backend.param.*;
 import com.hwj.bs_backend.pojo.Device;
+import com.hwj.bs_backend.pojo.PageResult;
 import com.hwj.bs_backend.pojo.Result;
 import com.hwj.bs_backend.service.DeviceService;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +43,7 @@ public class DeviceController {
      */
     @GetMapping("/user/{user_id}")
     // @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
-    public Result<List<DeviceListResponse>> getUserDevices(
+    public Result<DeviceListWithCount> getUserDevices(
             @PathVariable("user_id") Integer userId) {
         return deviceService.getUserDevices(userId);
     }
@@ -75,6 +73,7 @@ public class DeviceController {
     public Result<String> updateDevice(
             @PathVariable("device_id") String deviceId,
             @RequestBody DeviceUpdateRequest request) {
+        System.out.println(request);
         return deviceService.updateDevice(deviceId, request);
     }
 
@@ -90,6 +89,55 @@ public class DeviceController {
             @RequestParam("user_id") Integer userId,
             @RequestParam("today") @DateTimeFormat(pattern = "yyyy-MM-dd") Date today) {
         return deviceService.getNewDevicesCount(userId, today);
+    }
+
+    /**
+     * 查询设备列表（带分页）
+     *
+     * @param userId       用户ID
+     * @param deviceId     设备ID（可为空）
+     * @param deviceName   设备名称（可为空）
+     * @param deviceType   设备类型（可为空）
+     * @param page         页码
+     * @param pageSize     每页显示数量
+     * @return 设备列表（带分页）
+     */
+    @GetMapping("/search-with-pagination")
+    public Result<PageResult<List<DeviceListResponse>>> searchDevicesWithPagination(
+            @RequestParam("user_id") Integer userId,
+            @RequestParam(value = "device_id", required = false) String deviceId,
+            @RequestParam(value = "device_name", required = false) String deviceName,
+            @RequestParam(value = "device_type", required = false) Integer deviceType,
+            @RequestParam(value = "is_active", required = false) Boolean isActive,
+            @RequestParam("current") int page,
+            @RequestParam("size") int pageSize) {
+
+        DeviceSearchRequest searchRequest = new DeviceSearchRequest();
+        searchRequest.setUserId(userId);
+        searchRequest.setDeviceId(deviceId);
+        searchRequest.setDeviceName(deviceName);
+        searchRequest.setDeviceType(deviceType);
+        searchRequest.setIsActive(isActive);
+
+        try {
+            PageResult<List<DeviceListResponse>> pageResult = deviceService.searchDevicesWithPagination(
+                    searchRequest, page, pageSize);
+            return Result.success(pageResult);
+        } catch (Exception e) {
+            log.error("Error retrieving paginated device list", e);
+            return Result.error("Error retrieving paginated device list: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 删除设备
+     *
+     * @param deviceId 设备id
+     * @return 返回删除结果
+     */
+    @DeleteMapping("/delete/{device_id}")
+    public Result<String> deleteDevice(@PathVariable("device_id") String deviceId) {
+        return deviceService.deleteDevice(deviceId);
     }
 
 }

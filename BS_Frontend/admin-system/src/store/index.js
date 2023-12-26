@@ -6,6 +6,11 @@ import Vuex from "vuex";
 // 引入Vue
 import Vue from "vue";
 
+// 引入设备相关模块
+import devices from "./modules/devices";
+// 引入消息相关模块
+import message from "./modules/message";
+
 // 使用Vuex
 Vue.use(Vuex);
 
@@ -54,12 +59,19 @@ const state = {
   username: localStorage.getItem("username") || ""
 };
 
+// 用于存储相关模块
+const modules = {
+  devices,
+  message
+};
+
 // 创建store
 const store = new Vuex.Store({
   actions,
   mutations,
-  state
+  state,
+  modules
 });
 
-// 暴露store 使其他VueComponents可以使用   简称vc组件实例对象
+// 暴露store 使其他VueComponents可以使用
 export default store;

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-card>
+    <el-card class="user_info_card">
       <!-- 头部区域 -->
       <div class="user_header">
         <!-- 头像区域 -->
@@ -314,6 +314,9 @@ export default {
 };
 </script>
 <style scoped>
+.user_info_card {
+  margin: 20px 0;
+}
 .user_header {
   padding: 10px 10px;
   padding-left: 20px;

@@ -15,6 +15,11 @@ public class MessageCountResponse {
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date date;
 
+    // 总消息数量
     private int count;
+    // 正常消息数量
+    private int normalCount;
+    // 非正常消息数量
+    private int abnormalCount;
 }
 

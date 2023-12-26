@@ -10,8 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -88,6 +87,6 @@ public class MessageServiceImpl implements MessageService {
             log.error("查询用户所属设备最近七天的消息总数失败", e);
             return Result.error("查询用户所属设备最近七天的消息总数失败：" + e.getMessage());
         }
-
     }
+
 }

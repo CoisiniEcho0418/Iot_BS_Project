@@ -19,6 +19,8 @@ import moment from "moment";
 import BaiduMap from "vue-baidu-map";
 // 引入store（vuex）
 import store from "./store";
+// 导入iconfont
+import "./assets/fonts/iconfont.css";
 
 // 使用百度地图SDK
 Vue.use(BaiduMap, { ak: "9oFarDYWLF2rtgQ1zp0BCIxcjihqsqda" });
