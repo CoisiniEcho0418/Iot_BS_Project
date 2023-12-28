@@ -105,16 +105,19 @@
           <el-form-item label="原密码:"
                         prop="oldPassword">
             <el-input v-model="editPasswordForm.oldPassword"
+                      show-password
                       placeholder="请输入原密码" />
           </el-form-item>
           <el-form-item label="新密码:"
                         prop="newPassword">
             <el-input v-model="editPasswordForm.newPassword"
+                      show-password
                       placeholder="请输入新密码" />
           </el-form-item>
           <el-form-item label="确认密码:"
                         prop="confirmPassword">
             <el-input v-model="editPasswordForm.confirmPassword"
+                      show-password
                       placeholder="请确认密码" />
           </el-form-item>
           <el-form-item class="dialog_button"

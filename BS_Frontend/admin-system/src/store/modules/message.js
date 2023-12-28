@@ -26,9 +26,6 @@ const actions = {
   async fetchTotalMessageCount({ commit, rootState }) {
     try {
       const response = await axios.get("/message/total-count", {
-        // headers: {
-        //   Authorization: localStorage.getItem("Authorization")
-        // },
         params: {
           user_id: rootState.userId
         }
@@ -49,7 +46,6 @@ const actions = {
   },
 
   async fetchRecentlyMessageCount({ commit, rootState }) {
-    const today = new Date().toISOString().split("T")[0];
     function getRecentSevenDays() {
       const days = [];
 
@@ -68,11 +64,18 @@ const actions = {
 
       return days;
     }
+    const date = new Date();
+    date.setDate(date.getDate());
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date
+      .getDate()
+      .toString()
+      .padStart(2, "0");
+    const today = `${year}-${month}-${day}`;
+    console.log("today", today);
     try {
       const response = await axios.get("/message/received-count", {
-        // headers: {
-        //   Authorization: localStorage.getItem("Authorization")
-        // },
         params: {
           user_id: rootState.userId,
           today: today

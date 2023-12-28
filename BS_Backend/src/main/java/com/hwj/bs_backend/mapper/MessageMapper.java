@@ -3,6 +3,8 @@ package com.hwj.bs_backend.mapper;
 import com.hwj.bs_backend.param.MessageCountResponse;
 import com.hwj.bs_backend.param.MessageResponse;
 import com.hwj.bs_backend.param.TrackResponse;
+import com.hwj.bs_backend.pojo.Message;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -62,4 +64,14 @@ public interface MessageMapper {
             "GROUP BY DATE(m.timestamp)" +
             "ORDER BY date DESC")
     List<MessageCountResponse> getReceivedMessageCount(@Param("userId") Integer userId, @Param("today") Date today);
+
+    /**
+     * 新增消息
+     *
+     * @param message 封装了新增消息数据的对象
+     */
+    @Insert("INSERT INTO Message (device_id, timestamp, message_type, message_content, latitude, longitude, value) " +
+            "VALUES (#{message.deviceId}, #{message.timestamp}, #{message.messageType}, " +
+            "#{message.messageContent}, #{message.latitude}, #{message.longitude}, #{message.value})")
+    void insertMessage(@Param("message") Message message);
 }

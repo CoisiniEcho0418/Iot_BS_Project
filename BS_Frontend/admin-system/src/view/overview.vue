@@ -104,7 +104,16 @@ export default {
       const recentSevenDaysFormatted = this.getRecentSevenDaysFormatted();
       console.log(recentSevenDaysFormatted);
 
-      const today = new Date().toISOString().split('T')[0];
+      const date = new Date();
+      date.setDate(date.getDate());
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const day = date
+        .getDate()
+        .toString()
+        .padStart(2, "0");
+      const today = `${year}-${month}-${day}`;
+      console.log("today", today);
 
       const response = await axios.get('/device/new-devices-count', {
         params: {
@@ -347,9 +356,16 @@ export default {
       for (let i = 6; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
-        days.push(date.toISOString().split('T')[0]);
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date
+          .getDate()
+          .toString()
+          .padStart(2, "0");
+        const formattedDate = `${year}-${month}-${day}`;
+        days.push(formattedDate);
       }
-
+      console.log("RecentSevenDays", days)
       return days;
     },
     // 获取最近七天的日期，并以 mm/dd 格式输出

@@ -21,6 +21,7 @@
                     prefix-icon="el-icon-lock"
                     v-model="loginForm.password"
                     autocomplete="off"
+                    show-password
                     class="form_input"></el-input>
         </el-form-item>
         <el-form-item>
@@ -68,9 +69,11 @@
         <el-form-item label="密码:"
                       prop="newPassword">
           <el-input v-model="registerForm.newPassword"
+                    show-password
                     placeholder="请输入密码" />
         </el-form-item>
         <el-form-item label="确认密码:"
+                      show-password
                       prop="confirmPassword">
           <el-input v-model="registerForm.confirmPassword"
                     placeholder="请确认密码" />

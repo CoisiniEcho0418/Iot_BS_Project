@@ -27,7 +27,7 @@
                    @click="selectDevice()">确 定</el-button>
       </div>
       <!-- 数据表 -->
-      <el-table :data="messageData"
+      <el-table :data="displayedData"
                 style="width: 100%;"
                 :row-class-name="tableRowClassName"
                 border>
@@ -160,6 +160,7 @@ export default {
         // 	 value:90
         // },
       ],
+
       // 信息总条数
       total: 0,
       // 当前页
@@ -174,7 +175,15 @@ export default {
     };
   },
   watch: {},
-  computed: {},
+  computed: {
+    // 表格中展示的信息（5条/页）
+    // 使用计算属性来实现 displayedData
+    displayedData () {
+      const startIndex = (this.current - 1) * 5; // 假设每页显示5条数据
+      const endIndex = startIndex + 5; // 假设每页显示5条数据
+      return this.messageData.slice(startIndex, endIndex); // 假设每页显示5条数据
+    },
+  },
   methods: {
     // 选取对应的设备消息
     async selectDevice () {
@@ -193,39 +202,51 @@ export default {
     },
     // 发送请求获取设备历史消息
     async fetchDeviceHistory (deviceId) {
-      try {
-        // 发起请求获取设备历史消息
-        const response = await axios.get(`/message/device-history/${deviceId}`);
-        const responseData = response.data;
+      const requestData = async () => {
+        try {
+          // 发起请求获取设备历史消息
+          const response = await axios.get(`/message/device-history/${deviceId}`);
+          const responseData = response.data;
 
-        console.log("设备消息返回结果:")
-        console.log(responseData);
-        if (responseData.success) {
-          this.$message.success("设备信息查询成功！");
-          // 将获取到的消息数据中的 longitude 和 latitude 加到 polylinePath 中
-          this.polylinePath = responseData.data.map(item => ({
-            lng: item.longitude,
-            lat: item.latitude
-          }));
-          // 更新地图的center
-          if (responseData.data[0]) {
-            this.map.center.lng = responseData.data[0].longitude
-            this.map.center.lat = responseData.data[0].latitude
+          console.log("设备消息返回结果:")
+          console.log(responseData);
+          if (responseData.success) {
+            this.$message.success("设备信息查询成功(实时更新)！");
+            // 将获取到的消息数据中的 longitude 和 latitude 加到 polylinePath 中
+            this.polylinePath = responseData.data.map(item => ({
+              lng: item.longitude,
+              lat: item.latitude
+            }));
+            // 更新地图的center
+            if (responseData.data[0]) {
+              this.map.center.lng = responseData.data[0].longitude
+              this.map.center.lat = responseData.data[0].latitude
+            }
+            // 更新messageData和total
+            this.messageData = responseData.data;
+            this.total = responseData.data.length;
+            // 在成功获取设备历史消息后调用更新 displayedData 和 total 的方法
+            this.updateDisplayedDataAndTotal();
+          } else {
+            this.$message.error(responseData.msg);
           }
-          // 更新messageData和total
-          this.messageData = responseData.data;
-          this.total = responseData.data.length;
-        } else {
-          this.$message.error(responseData.msg);
+        } catch (error) {
+          console.error('获取设备历史消息时发生错误:', error);
         }
+      };
 
-      } catch (error) {
-        console.error('获取设备历史消息时发生错误:', error);
-      }
+      // 首次执行请求
+      await requestData();
+
+      // 设置定时器每隔一段时间重新发送请求
+      this.historyInterval = setInterval(requestData, 30000);
     },
-    // 处理分页
-    handleCurrentChange () {
+    handleCurrentChange (currentPage) {
+      /// 更新当前页码
+      this.current = currentPage;
 
+      // 根据新的页码获取数据
+      this.updateDisplayedDataAndTotal();
     },
     // 移动地图回调处理函数
     syncCenterAndZoom (e) {
@@ -233,10 +254,42 @@ export default {
       this.map.center.lng = lng
       this.map.center.lat = lat
       this.map.zoom = e.target.getZoom()
-    }
+    },
+    // 获取设备数据并更新列表
+    async fetchUserDevicesAndUpdateList () {
+      try {
+        // 调用 Vuex action 获取设备数据
+        await this.$store.dispatch("devices/fetchUserDevices");
+        // 更新设备列表
+        this.deviceList = this.$store.getters["devices/getUserDevices"];
+        console.log(this.deviceList);
+        // 在成功获取设备数据后更新 displayedData 和 total
+        this.updateDisplayedDataAndTotal();
+      } catch (error) {
+        console.error('获取设备数据时发生错误:', error);
+      }
+    },
+    // 更新 displayedData 和 total 的方法
+    updateDisplayedDataAndTotal () {
+      const startIndex = (this.current - 1) * 5; // 每页显示5条数据
+      const endIndex = startIndex + 5; // 每页显示5条数据
+
+      this.displayedData = this.messageData.slice(startIndex, endIndex);
+      console.log("current", this.current)
+      console.log("messageData", this.messageData);
+      console.log("displayedData", this.displayedData)
+      this.total = this.messageData.length;
+    },
 
   },
   created () {
+    // 首次加载数据
+    this.fetchUserDevicesAndUpdateList();
+
+    // // 然后每隔15秒更新一次设备数据
+    // this.updateInterval = setInterval(() => {
+    //   this.fetchUserDevicesAndUpdateList();
+    // }, 30000);
   },
   mounted () {
     // 在页面加载后调用 Vuex action 获取设备数据
@@ -245,7 +298,19 @@ export default {
       this.deviceList = this.$store.getters["devices/getUserDevices"];
       console.log(this.deviceList)
     });
-  }
+  },
+  beforeDestroy () {
+    // 清除定时器
+    // clearInterval(this.updateInterval);
+    clearInterval(this.historyInterval);
+  },
+  // 在切换 tab 前清除定时器
+  beforeTabChange () {
+    clearInterval(this.historyInterval); // 清除时间间隔
+    clearInterval(this.updateInterval);
+    // 其他操作，比如切换 tab
+  },
+
 };
 </script>
 <style scoped>

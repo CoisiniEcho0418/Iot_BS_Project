@@ -2,6 +2,8 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !BS_Backend/**/src/main/**/target/
 !BS_Backend/**/src/test/**/target/
+application.properties
+
 
 ### STS ###
 BS_Backend/.apt_generated

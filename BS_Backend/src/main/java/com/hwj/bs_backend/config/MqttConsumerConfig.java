@@ -1,17 +1,30 @@
 package com.hwj.bs_backend.config;
 
 import com.hwj.bs_backend.config.impl.MqttConsumerCallBack;
+import com.hwj.bs_backend.mapper.MessageMapper;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import com.hwj.bs_backend.mapper.DeviceMapper;
 
 import javax.annotation.PostConstruct;
 
 @Configuration
 public class MqttConsumerConfig {
+    // Inject DeviceMapper
+    private final DeviceMapper deviceMapper;
+    private final MessageMapper messageMapper;
+
+    // Inject DeviceMapper through constructor
+    public MqttConsumerConfig(@Autowired DeviceMapper deviceMapper,MessageMapper messageMapper) {
+        this.deviceMapper = deviceMapper;
+        this.messageMapper=messageMapper;
+    }
+
     @Value("${mqtt.username}")
     private String username;
 
@@ -63,7 +76,7 @@ public class MqttConsumerConfig {
             //设置遗嘱消息的话题，若客户端和服务器之间的连接意外断开，服务器将发布客户端的遗嘱信息
             options.setWill("willTopic",(clientId + "与服务器断开连接").getBytes(),0,false);
             //设置回调
-            client.setCallback(new MqttConsumerCallBack());
+            client.setCallback(new MqttConsumerCallBack(deviceMapper,messageMapper));
             client.connect(options);
             //订阅主题
             //消息等级，和主题数组一一对应，服务端将按照指定等级给订阅了主题的客户端推送消息

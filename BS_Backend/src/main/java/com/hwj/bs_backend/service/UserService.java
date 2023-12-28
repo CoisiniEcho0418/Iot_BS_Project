@@ -1,6 +1,8 @@
 package com.hwj.bs_backend.service;
 
 import com.hwj.bs_backend.annotation.TokenRequired;
+import com.hwj.bs_backend.mapper.DeviceMapper;
+import com.hwj.bs_backend.param.DeviceAddRequest;
 import com.hwj.bs_backend.param.LoginResponse;
 import com.hwj.bs_backend.pojo.Result;
 import com.hwj.bs_backend.pojo.User;
@@ -10,7 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.Objects;
+import java.util.Random;
 
 @Slf4j
 @Service
@@ -18,6 +22,8 @@ public class UserService {
 
     @Autowired
     UserMapper userMapper;
+    @Autowired
+    private DeviceMapper deviceMapper;
 
     /**
      * 处理用户登录的service方法
@@ -46,6 +52,8 @@ public class UserService {
         }
     }
 
+
+
     /**
      * 处理用户注册的service方法
      *
@@ -67,6 +75,9 @@ public class UserService {
             if (insertRowCount == 0) {
                 return Result.error("新增用户失败！");
             }
+
+            // 在用户注册成功后，自动帮用户注册device0001-device0005的设备（为了接受mqtt的消息）
+            addDevicesForUser(user.getId());
 
             return createLoginResponse(user);
         } catch (Exception e) {
@@ -206,4 +217,32 @@ public class UserService {
         }
     }
 
+    /**
+     * 在用户注册成功后新增设备的方法
+     *
+     * @param userId 新注册用户的ID
+     */
+    private void addDevicesForUser(Integer userId) {
+        try {
+            // 新增五个设备
+            for (int i = 1; i <= 5; i++) {
+                DeviceAddRequest device = new DeviceAddRequest();
+                device.setUserId(userId);
+                device.setDeviceName("device000" + i);
+                device.setDeviceDescription("系统自动新增的设备");
+                device.setDeviceType(new Random().nextInt(6) + 1);
+                device.setIsActive(true);
+
+                // 设置 registrationTime 和 lastUpdate（这个会在mapper中自动设成和registrationTime一致） 为当前时间
+                Date currentTime = new Date();
+                device.setRegistrationTime(currentTime);
+
+                // 调用 deviceMapper 插入设备
+                deviceMapper.insertDevice(device);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("新增设备失败：" + e.getMessage());
+        }
+    }
 }

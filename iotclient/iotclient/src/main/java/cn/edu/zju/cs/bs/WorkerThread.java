@@ -37,7 +37,7 @@ public class WorkerThread extends Thread {
             System.out.println("Connected");
             while (running) {
                 //随机等待10秒
-                int interval = rand.nextInt(10);
+                int interval = 15 + rand.nextInt(31);
                 Thread.sleep(interval * 1000);
 
                 SimpleDateFormat sdf=new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");

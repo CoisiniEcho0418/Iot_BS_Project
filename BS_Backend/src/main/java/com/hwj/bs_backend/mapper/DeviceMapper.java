@@ -109,4 +109,13 @@ public interface DeviceMapper {
     @Delete("DELETE FROM device WHERE device_id = #{deviceId}")
     int deleteDevice(@Param("deviceId") String deviceId);
 
+    /**
+     * 根据设备名称查询匹配的所有设备ID
+     *
+     * @param deviceName 设备名称
+     * @return 匹配的所有设备ID列表
+     */
+    @Select("SELECT device_id FROM device WHERE device_name = #{deviceName}")
+    List<String> findDeviceIdsByDeviceName(@Param("deviceName") String deviceName);
+
 }

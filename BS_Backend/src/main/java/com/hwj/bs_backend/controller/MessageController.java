@@ -1,5 +1,6 @@
 package com.hwj.bs_backend.controller;
 
+import com.hwj.bs_backend.annotation.TokenRequired;
 import com.hwj.bs_backend.param.MessageCountResponse;
 import com.hwj.bs_backend.param.MessageResponse;
 import com.hwj.bs_backend.param.TrackResponse;
@@ -28,7 +29,7 @@ public class MessageController {
      * @return 返回所有设备的总消息数量
      */
     @GetMapping("/total-count")
-    // @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
+     @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
     public Result<Integer> getTotalMessageCount(@RequestParam("user_id") int userId) {
         return messageService.getTotalMessageCountByUserId(userId);
     }
@@ -40,6 +41,7 @@ public class MessageController {
      * @return 响应结果
      */
     @GetMapping("/history-track/{device_id}")
+    @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
     public Result<List<TrackResponse>> getDeviceHistoryTrack(@PathVariable("device_id") String deviceId) {
         return messageService.getDeviceHistoryTrack(deviceId);
     }
@@ -51,6 +53,7 @@ public class MessageController {
      * @return 设备历史消息列表
      */
     @GetMapping("/device-history/{device_id}")
+    @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
     public Result<List<MessageResponse>> getDeviceHistory(
             @PathVariable("device_id") String deviceId) {
         return messageService.getDeviceHistory(deviceId);
@@ -63,6 +66,7 @@ public class MessageController {
      * @return 响应结果
      */
     @GetMapping("/received-count")
+    @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
     public Result<List<MessageCountResponse>> getReceivedMessageCount(
             @RequestParam("user_id") Integer userId,
             @RequestParam("today") @DateTimeFormat(pattern = "yyyy-MM-dd") Date today) {
