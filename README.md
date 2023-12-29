@@ -1,1 +1,1 @@
-This is a course project of ZJU B/S course.
+This is a course project of 2023 ZJU BS course.
