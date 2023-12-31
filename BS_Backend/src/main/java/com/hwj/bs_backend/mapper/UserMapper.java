@@ -27,6 +27,17 @@ public interface UserMapper {
     })
     User findByUsername(@Param("username") String username);
 
+    // 通过email查找用户
+    @Select("SELECT id, username, password, email, phone FROM user WHERE email = #{email}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "username", column = "username"),
+            @Result(property = "password", column = "password"),
+            @Result(property = "email", column = "email"),
+            @Result(property = "phone", column = "phone")
+    })
+    User findByEmail(@Param("email") String email);
+
     // 更新用户密码
     @Update("UPDATE user SET password = #{newPassword} WHERE username = #{username} AND password = #{oldPassword}")
     int updatePassword(@Param("username") String username, @Param("oldPassword") String oldPassword, @Param("newPassword") String newPassword);

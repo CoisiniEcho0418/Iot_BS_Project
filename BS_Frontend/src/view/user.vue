@@ -157,7 +157,15 @@ export default {
       },
       // 编辑个人信息表单的校验规则  TODO: 邮箱和手机号校验规则待更进
       editUserInfoRule: {
-
+        new_username: [
+          { min: 2, message: '用户名至少2个字符', trigger: 'blur' },
+        ],
+        new_email: [
+          { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+        ],
+        new_phone: [
+          { pattern: /^1[0-9]{10}$/, message: '请输入有效的手机号(1开头的11位手机号)', trigger: 'blur' }
+        ]
       },
       // 用于控制修改密码dialog的打开与否
       editPasswordDialog: false,
@@ -253,8 +261,9 @@ export default {
             this.$message.success("个人信息修改成功！");
             // 重新获取用户个人信息
             this.getUserInfo();
+            this.closeEditUserInfo();
           } else {
-            this.$message.error(res.message);
+            this.$message.error(res.msg);
           }
         } catch (error) {
           console.error("请求失败:", error);

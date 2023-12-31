@@ -62,6 +62,11 @@ public class UserService {
      */
     public Result<LoginResponse> register(User user) {
         try {
+            // 判断email是否已经存在
+            User existingEmail = userMapper.findByEmail(user.getEmail());
+            if(existingEmail!=null){
+                return Result.error("注册邮箱已存在！");
+            }
             // 判断用户名是否已存在
             User existingUser = userMapper.findByUsername(user.getUsername());
             if (existingUser != null) {
@@ -156,6 +161,17 @@ public class UserService {
     // @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
     public Result<String> editUserInfo(Integer userId, String newUsername, String newEmail, String newPhone) {
         try {
+            // 判断email是否已经存在
+            User existingEmail = userMapper.findByEmail(newEmail);
+            if(existingEmail!=null){
+                return Result.error("新邮箱已存在！");
+            }
+            // 判断用户名是否已存在
+            User existUser = userMapper.findByUsername(newUsername);
+            if (existUser != null) {
+                return Result.error("新用户名已存在！");
+            }
+
             // 检查新用户名是否和现有用户名一致
             User existingUser = userMapper.findById(userId);
 

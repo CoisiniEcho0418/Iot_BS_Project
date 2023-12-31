@@ -10,7 +10,7 @@
                ref="ruleForm-login">
         <el-form-item prop="username">
           <el-input v-model="loginForm.username"
-                    placeholder="请输入账号"
+                    placeholder="请输入账号（用户名）"
                     autocomplete="off"
                     prefix-icon="el-icon-user"
                     class="form_input"></el-input>
@@ -73,9 +73,9 @@
                     placeholder="请输入密码" />
         </el-form-item>
         <el-form-item label="确认密码:"
-                      show-password
                       prop="confirmPassword">
           <el-input v-model="registerForm.confirmPassword"
+                    show-password
                     placeholder="请确认密码" />
         </el-form-item>
         <el-form-item label-width="0px">
@@ -119,7 +119,7 @@ export default {
       },
       loginRules: {
         username: [
-          { required: true, message: "请输入账号", trigger: 'blur' }
+          { required: true, message: "请输入账号（用户名）", trigger: 'blur' }
         ],
         password: [
           { required: true, message: "请输入密码", trigger: 'blur' }
@@ -128,10 +128,12 @@ export default {
       // TODO: 邮箱和手机号校验规则待更进
       registerRules: {
         username: [
-          { required: true, message: "请输入账号", trigger: 'blur' }
+          { required: true, message: "请输入账号（用户名）", trigger: 'blur' },
+          { min: 2, message: '用户名至少2个字符', trigger: 'blur' },
         ],
         newPassword: [
-          { required: true, message: "请输入密码", trigger: 'blur' }
+          { required: true, message: "请输入密码", trigger: 'blur' },
+          { min: 6, message: '密码长度至少6个字符', trigger: 'blur' },
         ],
         confirmPassword: [
           { required: true, message: "请确认新密码", trigger: "blur" }

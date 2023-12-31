@@ -76,6 +76,7 @@
       </el-pagination>
       <!-- 百度地图 -->
       <baidu-map class="map"
+                 ref="bmMapRef"
                  :center="map.center"
                  inertial-dragging
                  :scroll-wheel-zoom="true"
@@ -99,6 +100,16 @@
                      stroke-color="blue"
                      :stroke-opacity="0.5"
                      :stroke-weight="2"></bm-polyline>
+        <!-- 模板中渲染点 -->
+        <bm-marker v-for="(position, index) in markerPosition"
+                   :position="position"
+                   :key="index">
+          <!-- 如果有对应的标注文本，渲染标注 -->
+          <bm-label v-if='markerLabel[index].content!=""'
+                    :content="markerLabel[index].content"
+                    :labelStyle="markerLabelStyle[index]"
+                    :offset="{width: -35, height: 30}" />
+        </bm-marker>
       </baidu-map>
       <!-- 显示&编辑经纬度和缩放等级 -->
       <div class="map_editor">
@@ -124,6 +135,7 @@
 
 <script>
 import axios from '../../util/axiosConfig'; // 引入axios实例
+import icon from "@/assets/img/MapMarker.png" // 引入百度地图点图标
 
 export default {
   components: {},
@@ -136,7 +148,7 @@ export default {
           lng: 120.120794,
           lat: 30.259157
         },
-        zoom: 10,
+        zoom: 12,
       },
       // 可查看的设备的列表 
       deviceList: [],
@@ -171,7 +183,19 @@ export default {
         // { lng: 120.405, lat: 29.920 },
         // { lng: 120.223493, lat: 30.407445 }
       ],
-
+      // 点的坐标
+      markerPosition: [
+        // { lng: 119.804, lat: 30.915 },
+      ],
+      // 点下面的标注
+      markerLabel: [
+        // {content:""}
+      ],
+      // 点标注的样式
+      markerLabelStyle: [
+        // {color:red}
+      ],
+      historyInterval: null,
     };
   },
   watch: {},
@@ -187,6 +211,8 @@ export default {
   methods: {
     // 选取对应的设备消息
     async selectDevice () {
+      // 清除之前的计时器
+      clearInterval(this.historyInterval);
       // 获取当前选择的设备
       const selectedDevice = this.deviceList.find(
         (device) => device.deviceId === this.value
@@ -199,6 +225,46 @@ export default {
         // 调用函数发送请求
         this.fetchDeviceHistory(selectedDevice.deviceId);
       }
+    },
+    // 添加标注
+    addMarkers () {
+      // 先清除之前的标注
+      this.clearMarkers();
+
+      // 遍历消息数据，根据消息类型添加标注
+      this.messageData.forEach((item, index) => {
+        const markerPosition = { lng: item.longitude, lat: item.latitude };
+
+        // 将点的坐标添加到数组中
+        this.markerPosition.push(markerPosition);
+
+        // 如果是警告信息，添加标注文本
+        if (item.messageType === 1) {
+
+          // 将标注文本的内容添加到数组中
+          this.markerLabel.push({ content: "异常设备: " + item.messageContent });
+
+          // 将标注文本的样式添加到数组中
+          this.markerLabelStyle.push({ color: 'red', fontSize: '13px' });
+
+        } else {
+          // 如果不是警告信息，添加一个空对象，保持三个数组元素的对应
+          this.markerLabel.push({ content: "" });
+          this.markerLabelStyle.push({});
+        }
+      });
+
+      // 在添加完标注后，更新地图
+      this.$nextTick(() => {
+        this.$refs.bmMapRef.panTo(this.markerPosition[this.markerPosition.length - 1]); // 将地图中心移动到最后一个点
+      });
+    },
+    // 清除标注
+    clearMarkers () {
+      // 清空坐标、标注内容和标注样式数组
+      this.markerPosition = [];
+      this.markerLabel = [];
+      this.markerLabelStyle = [];
     },
     // 发送请求获取设备历史消息
     async fetchDeviceHistory (deviceId) {
@@ -227,6 +293,9 @@ export default {
             this.total = responseData.data.length;
             // 在成功获取设备历史消息后调用更新 displayedData 和 total 的方法
             this.updateDisplayedDataAndTotal();
+
+            // 添加标注
+            this.addMarkers();
           } else {
             this.$message.error(responseData.msg);
           }
@@ -307,7 +376,6 @@ export default {
   // 在切换 tab 前清除定时器
   beforeTabChange () {
     clearInterval(this.historyInterval); // 清除时间间隔
-    clearInterval(this.updateInterval);
     // 其他操作，比如切换 tab
   },
 
