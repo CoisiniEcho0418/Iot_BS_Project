@@ -67,3 +67,9 @@ mqtt.default.topic=topic
 项目使用`maven`进行依赖管理，请自行参考`maven`的使用方法。或使用`IntelliJ IDEA`打开项目，使用`IDEA`自带的`maven`插件进行依赖的更新。当所有依赖更新完之后点击运行即可启动后端项目（这之前得先保证上一步的配置文件配置无误）。
 
 或者你也可以参考其他方式运行`maven`项目，可以参考这个 [总结启动maven项目的3种方式](https://blog.csdn.net/qq_43392001/article/details/99625275)
+
+### 数据库建表语句
+
+数据库的建表语句存储在在目录`src/main/resources`下，文件名为 `bs_database.sql` ，示意图如下：
+
+![image-20240104162318533](D:\Desktop\BS体系设计\大作业\BS_Project\BS_Backend\image-20240104162318533.png)
