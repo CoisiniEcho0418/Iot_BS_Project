@@ -164,6 +164,7 @@ export default {
         ],
         newPassword: [
           { required: true, message: "请输入新密码", trigger: "blur" },
+          { min: 6, message: '密码长度至少6个字符', trigger: 'blur' },
         ],
         confirmPassword: [
           { required: true, message: "请确认新密码", trigger: "blur" },

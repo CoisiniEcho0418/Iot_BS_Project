@@ -9,6 +9,7 @@ import com.hwj.bs_backend.pojo.User;
 import com.hwj.bs_backend.mapper.UserMapper;
 import com.hwj.bs_backend.utils.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -161,6 +162,9 @@ public class UserService {
     // @TokenRequired // 添加 TokenRequired 注解，表示需要 token 鉴权
     public Result<String> editUserInfo(Integer userId, String newUsername, String newEmail, String newPhone) {
         try {
+            if(newPhone== null&&newUsername==null&&newEmail==null){
+                return Result.error("修改失败！未填写任何修改信息！");
+            }
             // 判断email是否已经存在
             User existingEmail = userMapper.findByEmail(newEmail);
             if(existingEmail!=null){
