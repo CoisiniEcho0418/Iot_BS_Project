@@ -10,15 +10,17 @@
 
 ### 编写配置文件
 
-在目录`src/main/resources`下新建`application.properties`文件，内容参考`application_template.properties`，仅需修改`EDIT ME`中带尖括号的信息即可（注意有两个地方，分别是数据库连接设置和JWT秘钥设置）。
+在目录`src/main/resources`下新建`application.properties`文件，内容参考`application_template.properties`，仅需修改`EDIT ME`中带尖括号的信息即可（注意有三个地方，分别是数据库连接设置，JWT秘钥设置和MQTT服务器url配置）。
 
 其中，第一个 `EDIT ME` 块主要是SpringBoot整合MyBatis需要的数据库连接配置，你可以参考这篇文章进行配置 [SpringBoot整合Mybatis](https://blog.csdn.net/junR_980218/article/details/124805813) 
 
-第一个 `EDIT ME` 块主要是用于生成 `JWT` 令牌的加密秘钥，你可以任取一串字符串作为秘钥
+第二个 `EDIT ME` 块主要是用于生成 `JWT` 令牌的加密秘钥，你可以任取一串字符串作为秘钥
+
+第三个`EDIT ME` 块主要是用于配置MQTT服务器的url，如果你的mqtt服务器是在本地运行，则填写`127.0.0.1`即可，若你是部署在自己的服务器上，则需要改为你服务器的公网IP。MQTT服务器的部署可以参考这篇文章[快速搭建个人MQTT服务器（基于EMQX） - 小文の知识窝 (wentxw.cc)](https://www.wentxw.cc/565.html)
 
 ```properties
 #-----EDIT ME-----#
-# 数据库连接配置
+# 数据库配置
 spring.datasource.driver-class-name=<your_datasource_driver-class-name>
 # 数据库连接URL
 spring.datasource.url=<your_datasource_url>
@@ -31,6 +33,15 @@ spring.datasource.password=<your_datasource_password>
 #-----EDIT ME-----#
 # JWT 配置 （任意字符串秘钥）
 jwt.secretKey=<"your_token_secret_key">
+#------------------#
+
+#-----EDIT ME-----#
+# MQTT配置信息
+mqtt.url=tcp://<127.0.0.1 或者你部署mqtt服务器的公网IP>:1883
+mqtt.username=admin
+mqtt.password=public
+mqtt.client.id=consumer-id
+mqtt.default.topic=topic
 #------------------#
 
 # MyBatis 配置
@@ -48,13 +59,6 @@ logging.level.root=info
 # logging.level.com.hwj.bs_backend.controller=DEBUG
 logging.level.com.hwj.bs_backend.service=DEBUG
 logging.level.com.hwj.bs_backend.pojo=DEBUG
-
-# MQTT配置信息
-mqtt.url=tcp://127.0.0.1:1883
-mqtt.username=admin
-mqtt.password=public
-mqtt.client.id=consumer-id
-mqtt.default.topic=topic
 
 ```
 
